@@ -1,0 +1,106 @@
+###############################################################################
+#
+# Population dynamics of the SPATIALLY IMPLICIT Leslie-Gower 
+# (aka annual plant model) for 2 species, with calculation of 
+# invasion growth rates and coexistence mechanisms
+#
+###############################################################################
+
+#=========================================================================
+## Load these libraries
+#=========================================================================
+library(MASS)
+source("./eq_tests.R")
+
+#=========================================================================
+# Population dynamics implemented numerically with reciprocal invasions
+#=========================================================================
+#########
+#Tunable
+#########
+ngens=16000 #Number of generations 
+mFr=matrix(c(5,5))   #Mean reproduction rates
+sig_Fr= matrix(c(1, -1, -1, 1),2,2) #Covariance matrix
+alphas=matrix( c(0.5,0.5),2,1) #competitive interactions
+sr=0.9 #Survival
+#Invasion times (divide into quarters is the easiest)
+invasions =c(1, floor(ngens/4), floor(ngens/2), floor(ngens*3/4) )
+
+#########
+#Internal
+#########
+Fr=abs(mvrnorm(ngens,mFr,sig_Fr)) #Take the abs value of correlated normal
+#Standardize values between 0 and 1 based on maximum.
+Fr=Fr/(matrix(apply(Fr,2,max),ngens,2,byrow=T)) 
+#Population matrixes
+nrns1=matrix(0,ngens,1)
+nrns2=matrix(0,ngens,1)
+#Exponential form of the model: 
+nrns1E=matrix(0,ngens,1)
+nrns2E=matrix(0,ngens,1)
+
+nrns2[1]=0.1 #Seed species 2 and allow it to establish as resident
+nrns2E[1]=0.1
+
+for (n in 1:(ngens-1)) {
+
+	#Invasion: Seed or set to near-zero at the appropriate time steps:
+	if (n==invasions[2]) { nrns1[n]=0.0001; nrns1E[n]=0.0001  }
+	#Switch the roles of resident and invader between species 1 and 2
+	if (n==invasions[3]) { nrns1[n]=0.1; nrns1E[n]=0.1
+							nrns2[n]=0; nrns2E[n]=0   }
+	#Second invasion
+	if (n==invasions[4]) { nrns2[n]=0.0001;nrns2E[n]=0.0001 }
+
+
+	#Spatially implicit annual plant model
+	nrns1[n+1] = sr*(1-Fr[n,1])*nrns1[n]+Fr[n,1]*mFr[1]*nrns1[n]/(1+alphas[1]*(nrns1[n]*Fr[n,1]+Fr[n,2]*nrns2[n]))
+	nrns2[n+1] = sr*(1-Fr[n,2])*nrns2[n]+Fr[n,2]*mFr[2]*nrns2[n]/(1+alphas[2]*(nrns1[n]*Fr[n,1]+Fr[n,2]*nrns2[n]))
+
+	#Exponential form of the model
+	nrns1E[n+1] = sr*(1-exp(log(Fr[n,1])))*nrns1E[n]+nrns1E[n]*mFr[1]*exp( log(Fr[n,1])- log(1+alphas[1]*(nrns1E[n]*Fr[n,1]+Fr[n,2]*nrns2E[n])))
+	nrns2E[n+1] = sr*(1-exp(log(Fr[n,2])))*nrns2E[n]+nrns2E[n]*mFr[2]*exp( log(Fr[n,2])-log(1+alphas[2]*(nrns1E[n]*Fr[n,1]+Fr[n,2]*nrns2E[n])))
+
+
+}
+
+plot(nrns2,t="l")
+lines(nrns1,col="red") 
+
+#=========================================================================
+# Calculate invasion growth rates 
+#=========================================================================
+
+#Fit a linear model to get invasion growth rates
+a1=4000
+a2=4100
+m1=log(nrns1[a1:a2])
+xx= a1:a2
+m1.lm=lm(m1~xx)
+
+#or take the log(gr1[inv+1]/gr1[inv]) to get invasion growth rates
+ni = a1
+nj=a1+1
+m1.d = log( (sr*(1-Fr[nj,1])*nrns1[nj]+Fr[nj,1]*mFr[1]*nrns1[nj]/(1+alphas[1]*(nrns1[nj]*Fr[nj,1]+Fr[nj,2]*nrns2[nj])))/
+(sr*(1-Fr[ni,1])*nrns1[ni]+Fr[ni,1]*mFr[1]*nrns1[ni]/(1+alphas[1]*(nrns1[ni]*Fr[ni,1]+Fr[ni,2]*nrns2[ni]))) )
+
+#=========================================================================
+# How well do stats for equilibrium work?  
+#=========================================================================
+
+#This version smooths the data with a moving average and then returns the
+#1st derivative at each point in the smoothed curve. Equilibrium should happen 
+#when the 1st derivative = 0
+#This is sensitive to the window size when the data are noisy. 
+#Try different window sizes for the moving average. 
+ed1 = eq_diff(nrns1[invasions[2]:(invasions[2]+1000)],window=3)
+ed1 = eq_diff(nrns1[invasions[2]:(invasions[2]+1000)],window=100)
+plot(ed1[1:500,2])
+
+#This is a standard test for stationarity in a time series. The test is 
+#actually for non-stationarity, so low p-values indicate non-stationarity. 
+#This test does not actually work very well when trying to identify a region
+#of stationarity (i.e. equilibrium) in an otherwise stationary series.  
+eLB1=eq_LB(nrns1[invasions[2]:(invasions[2]+1000)], window = 10, max.lag = 10 )
+eLB1=eq_LB(nrns1[invasions[2]:(invasions[2]+1000)], window = 100, max.lag = 100 )
+plot(eLB1[1:500])
