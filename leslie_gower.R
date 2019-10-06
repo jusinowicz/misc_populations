@@ -87,7 +87,9 @@ m1.d = log( (sr*(1-Fr[nj,1])*nrns1[nj]+Fr[nj,1]*mFr[1]*nrns1[nj]/(1+alphas[1]*(n
 #=========================================================================
 # How well do stats for equilibrium work?  
 # Use the time series of population growth, nrns1, to examine the 
-# equilibrium properties of species 1. 
+# equilibrium properties of species 1. If you wanted to run any of this on
+# real data, just replace "nrns1" with your matrix/data.frame column of 
+# population time series data. 
 #=========================================================================
 
 #This version smooths the data with a moving average and then returns the
