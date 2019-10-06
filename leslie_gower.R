@@ -116,3 +116,23 @@ delta_dat = data.frame( del1 = dat2/dat1, dat1=dat1 )
 start1 = c(r=1.1, K=1.1) #The starting values of parameters that NLS will fit
 logistic_fit = nls(del1 ~ 1+r*(1-dat1/K),data = delta_dat, start1)
 summary(logistic_fit)
+
+#If you want to get confidence intervals and plot them as well.
+###This plot is actually kind of neat. It plots the predicted
+#growth rate (del1) as a function of the density of species 1 (dat1)
+#and not as a function of time. By relating the data this way, it shows how 
+#most of the spread in the data that drives the SE/CI width happens at the 
+#low densities and that there is a lot less SE around the equilibrium density
+#itself. This might be a useful visual tool for real data to gauge if the 
+#population growth has convgerged on an equilibrium. 
+
+delta_dat$pred = predict(logistic_fit) #Get the fits from the model
+se = summary(logistic_fit)$sigma #Sigma
+ci = outer(delta_dat$pred, c(outer(se, c(-1,1), '*'))*1.96, '+') #CIs
+ii = order(delta_dat$dat1)
+
+# shaded area plot
+low = ci[ii,1]; high = ci[ii,2]; base = delta_dat[ii,'dat1']
+polygon(c(base,rev(base)), c(low,rev(high)), col='grey')
+with(delta_dat[ii,], lines(dat1, pred, col='blue'))
+with(delta_dat, points(dat1, del1))
