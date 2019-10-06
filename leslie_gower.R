@@ -86,6 +86,8 @@ m1.d = log( (sr*(1-Fr[nj,1])*nrns1[nj]+Fr[nj,1]*mFr[1]*nrns1[nj]/(1+alphas[1]*(n
 
 #=========================================================================
 # How well do stats for equilibrium work?  
+# Use the time series of population growth, nrns1, to examine the 
+# equilibrium properties of species 1. 
 #=========================================================================
 
 #This version smooths the data with a moving average and then returns the
@@ -104,3 +106,13 @@ plot(ed1[1:500,2])
 eLB1=eq_LB(nrns1[invasions[2]:(invasions[2]+1000)], window = 10, max.lag = 10 )
 eLB1=eq_LB(nrns1[invasions[2]:(invasions[2]+1000)], window = 100, max.lag = 100 )
 plot(eLB1[1:500])
+
+#Fit a logistic growth model to the data instead of testing for any sort 
+#of equilibrium conditions. Use NLS to find K 
+dat1 = nrns1[invasions[2]:(invasions[2]+1000)]
+dat2 = nrns1[(invasions[2]+1):(invasions[2]+1000+1)] #One time step forward
+#Fit the model using the growth rate del1 = (change in time)
+delta_dat = data.frame( del1 = dat2/dat1, dat1=dat1 ) 
+start1 = c(r=1.1, K=1.1) #The starting values of parameters that NLS will fit
+logistic_fit = nls(del1 ~ 1+r*(1-dat1/K),data = delta_dat, start1)
+summary(logistic_fit)
