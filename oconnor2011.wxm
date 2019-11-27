@@ -1,0 +1,15 @@
+/* [wxMaxima batch file version 1] [ DO NOT EDIT BY HAND! ]*/
+/* [ Created with wxMaxima version 13.04.2 ] */
+
+/* [wxMaxima: input   start ] */
+P1: r*P*(1-P/KP) - a*P*H;
+H1: a*P*H - m*H ; 
+gP1: r*(1-P/KP) - a*H;
+gH1: a*P - m; 
+solve([gP1=0,gH1=0],[P,H]);
+solve([gP1=0],[H]);
+solve([gH1=0],[P]);
+/* [wxMaxima: input   end   ] */
+
+/* Maxima can't load/batch files which end with a comment! */
+"Created with wxMaxima"$
