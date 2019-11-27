@@ -11,5 +11,22 @@ solve([gP1=0],[H]);
 solve([gH1=0],[P]);
 /* [wxMaxima: input   end   ] */
 
+/* [wxMaxima: input   start ] */
+But this is more like MacArthur's approach, where the time-scale of the 
+resource is fast so that it's dynamics are relatively unaffected by the 
+consumer. 
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+P1: r*P*(1-P/KP) - a*P*H;
+H1: a*P*H - m*H ; 
+gP1: r*(1-P/KP) - a*H;
+gH1: a*P - m; 
+solve([gP1=0,gH1=0],[P,H]);
+solve([gP1=0],[P]);
+nP1: −((a*H−r)*KP)/r;
+nH1: a*nP1*H - m*H;
+/* [wxMaxima: input   end   ] */
+
 /* Maxima can't load/batch files which end with a comment! */
 "Created with wxMaxima"$
