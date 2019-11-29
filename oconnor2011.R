@@ -4,7 +4,8 @@
 # This uses the library deSolve for the ODEs
 # This code contains the following parts so far:
 # 1. Basic ODE simulation with constant temp-dependent parameters
-#
+# 	 Right now only one of the models is implemented. This is model 4 in the 
+#	 table. 
 #==============================================================================
 #==============================================================================
 #Load Libraries
@@ -51,7 +52,7 @@ out1 = list(matrix(0,ntemps,1))
 for (t in 1:ntemps ) { 
 	print(t)
 	T = temps[t]
-	
+
 	###Calculate model parameters with activation energies
 	rp = rp0#*exp(-rEp/(T*kb))  #These parameter values are crazy small! wtf? 
 	Kp = Kp0#*exp(-KEp/(T*kb))  
@@ -70,7 +71,8 @@ for (t in 1:ntemps ) {
 		 )
 
 	###Define the model for deSolve
-	oconnor_model = function(times,sp,parms){
+	###This is model 4 in Table 2 of OConnor et al. 2011
+	oconnor_model4 = function(times,sp,parms){
 			     P = matrix(sp[1:nPsp],nPsp, 1)
 			     H = matrix(sp[(nPsp+1):(nPsp+nHsp)],nHsp, 1)
 
@@ -92,7 +94,7 @@ for (t in 1:ntemps ) {
 	###Run the ODE and store the output
 	winit = c(matrix(3,nspp,1))
 	out=NULL
-	out_temp = ode(y=winit,times=times,func=oconnor_model,parms=parms)
+	out_temp = ode(y=winit,times=times,func=oconnor_model4,parms=parms)
 	out = out_temp
 	out$parms=parms
 	out1[t]=out
