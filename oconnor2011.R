@@ -28,7 +28,7 @@ rEp = 0.32
 KEp = -0.32
 aEh = 0.65
 mEh = 0.65
-kb = 1.38064852*10^(-23)
+kb = 8.617e-5# 1.38064852*10^(-23)
 K = 273
 
 ###Initial values? 
@@ -40,14 +40,18 @@ b0  = 100
 e0 = 0.1
 
 #Range of temperatures to explore: 
+###For now, while I'm still troubleshooting, just use 1 temp.
+
 tmin = 20 +K
-tmax = 30 +K
+tmax = tmin+1#30 +K
 tby = 1
 ntemps = (tmax-tmin)/tby
 temps = seq(tmin,tmax,tby)
 
 #Output of each temp
 out1 = list(matrix(0,ntemps,1))
+
+
 
 for (t in 1:ntemps ) { 
 	print(t)
@@ -95,14 +99,14 @@ for (t in 1:ntemps ) {
 	winit = c(matrix(3,nspp,1))
 	out=NULL
 	out_temp = ode(y=winit,times=times,func=oconnor_model4,parms=parms)
-	out = out_temp
+	out$out = out_temp
 	out$parms=parms
-	out1[t]=out
+	out1[t]= list(out)
 
 
-	plot(out[,"1"],t="l",col="red",ylim = c(0,max(out[ ,2:(nspp+1)],na.rm=T)))
+	plot(out$out[,"1"],t="l",col="red",ylim = c(0,max(out$out[ ,2:(nspp+1)],na.rm=T)))
 	for( n in 2:(nspp) ) {
-		lines(out[,paste(n)],t="l",col="blue")
+		lines(out$out[,paste(n)],t="l",col="blue")
 	}
 
 }
