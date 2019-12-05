@@ -81,11 +81,11 @@ for (t in 1:ntemps ) {
 
 				###Resource dynamics: Logistic growth, reduced by consumption
 				dP = P
-				dP = P*( (rp) * (1 - P/Kp) - ah*H)
+				dP = P*( (rp) * (1 - P/Kp) - ah*H*(1/(P+b0)))
 			
 				###Consumer dynamics: LV consumption
 				dH = H 
-				dH = H*( ah*P - H*mh )
+				dH = H*( ah*P/(P+b0) - mh )
 
 				
 
@@ -93,8 +93,8 @@ for (t in 1:ntemps ) {
 		}
 
 	###Run the ODE and store the output
-	#winit = c(matrix(3,nspp,1))
-	winit = c(matrix( c(3,0), nspp,1))
+	winit = c(matrix(3,nspp,1))
+	#winit = c(matrix( c(3,0), nspp,1))
 
 	out=NULL
 	out_temp = ode(y=winit,times=times,func=oconnor_model4,parms=parms)
