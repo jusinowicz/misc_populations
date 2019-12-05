@@ -86,22 +86,25 @@ for (t in 1:ntemps ) {
 				###Consumer dynamics: LV consumption
 				dH = H 
 				dH = H*( ah*P - H*mh )
+
 				
-				}
 
 			return(list(c(dP,dH)))
 		}
 
 	###Run the ODE and store the output
 	winit = c(matrix(3,nspp,1))
+	winit = c(matrix(c(3,0),nspp,1))
+
 	out=NULL
 	out_temp = ode(y=winit,times=times,func=oconnor_model4,parms=parms)
 	out$out = out_temp
 	out$parms=parms
 	out1[t]= list(out)
 
-
-	plot(out$out[,"1"],t="l",col="red",ylim = c(0,max(out$out[ ,2:(nspp+1)],na.rm=T)))
+	###Plot population densities. Red is the primary producer, blue is the herbivore
+	plot(out$out[,"1"],t="l",col="red",ylim = c(0,max(out$out[ ,2:(nspp+1)],na.rm=T)), 
+		xlab="Time",ylab = "Population")
 	for( n in 2:(nspp) ) {
 		lines(out$out[,paste(n)],t="l",col="blue")
 	}
