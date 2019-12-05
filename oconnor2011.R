@@ -42,20 +42,19 @@ e0 = 0.1
 #Range of temperatures to explore: 
 ###For now, while I'm still troubleshooting, just use 1 temp.
 
-tmin = 20 +K
-tmax = tmin+1#30 +K
-tby = 1
-ntemps = (tmax-tmin)/tby
-temps = seq(tmin,tmax,tby)
+tmin = 20+K #initial temperature
+tmax = tmin+1#30 +K #final temperature 
+tby = 1 #temp increment 
+ntemps = (tmax-tmin)/tby #Number of temperature iterations
+temps = seq(tmin,tmax,tby) # Temperature vector 
 
 #Output of each temp
 out1 = list(matrix(0,ntemps,1))
 
-
-
 for (t in 1:ntemps ) { 
+	
 	print(t)
-	T = temps[t]
+	T = temps[t] #Grab the actual temperature value
 
 	###Calculate model parameters with activation energies
 	rp = rp0#*exp(-rEp/(T*kb))  #These parameter values are crazy small! wtf? 
