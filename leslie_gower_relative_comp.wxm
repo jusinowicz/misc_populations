@@ -1,0 +1,103 @@
+/* [wxMaxima batch file version 1] [ DO NOT EDIT BY HAND! ]*/
+/* [ Created with wxMaxima version 13.04.2 ] */
+
+/* [wxMaxima: input   start ] */
+#The basic conditions for coexistence for the Leslie-Gower model. 
+#lg1 corresponds to the invader growth rate, lg2 to the resident growth rate.
+
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+lg1: s1+r1/(1+a12*x2e);
+lg2: s2+r2/(1+a22*x2e);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+#Given that lg1 has to be >1 for each species in turn for coexistence, we can solve
+#lg1 =1 in terms of x2e for the boundary condition: 
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+sol12:solve(lg1=1,x2e);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+#Then solve for the equilibrium condition of the resident, lg2 = 1
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+sol22:solve(lg2=1,x2e);
+x2es:map(second,sol22);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+#Define k1 = (r1-(1-s1))/(1-s1) and k2 = (r2-(1-s2))/(1-s2), 
+#rewrite x2es = 1/a22 * k2 and x2e = 1/a12 *k1. Then the invasion condition
+#can be rewritten as x2e>x2es; k1/a12 > k2/a22; k1/k2 > a12/a22;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+x2e:1/a22 * k2;
+x2es: 1/a12*k1;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+#Now write out the same conditions for species 2 invading 1, including the k2 and k1s.
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+x1e: −(s2+r2−1)/(a21*s2−a21);
+x1es: −(s1+r1−1)/(a11*s1−a11);
+x1e:k2 * 1/a21;
+x1es:k1*1/a11;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+#This leads to the analogous relationship with k2/k1 > a21/a11. But inverting this
+so that k1/k2 < a11/a21 leads to the relationship that a12/a22 < k1/k2 < a11/a21. 
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+#If instead we normalize relative to equilbrium densities from the beginning, the 
+#conditions are recovered. 
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+lg1: s1+r1/(1+a12x2e);
+lg2: s2+r2/(1+a22x2e);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+sol12:solve(lg1=1,a12x2e);
+sol22:solve(lg2=1,a22x2e);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+a12x2e = k1 and a22x2e=k2 still leads to k1/k2>a12/a22
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+#Now, if we use this relationship to define the relative competition coefficients
+#a12 = a12*x2e/(a22*x2e), etc. then 
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+a12 : a12*x2e/(a22*x2e);
+a22 : 1;
+lg1: s1+r1/(1+a12*x2e);
+lg2: s2+r2/(1+a22*x2e);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+sol12:solve(lg1=1,x2e);
+sol22:solve(lg2=1,x2e);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+#Define k1 = (r1-(1-s1))/(1-s1) and k2 = (r2-(1-s2))/(1-s2), 
+#rewrite x2es =  k2 and x2e = a22/a12 *k1. Then the invasion condition
+#can still be rewritten as x2e>x2es; k1/a12 > k2/a22; k1/k2 > a12/a22;
+/* [wxMaxima: input   end   ] */
+
+/* Maxima can't load/batch files which end with a comment! */
+"Created with wxMaxima"$
