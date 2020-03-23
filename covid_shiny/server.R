@@ -41,16 +41,21 @@ infection_rates = function (countries) {
 
 	#Rescale the time series so that they all start on day_150	
 	for (n in 1:length(countries)){
-		cv1_cr150$day_from[cv1_cr150$CR == countries[n]]  = 
-			subset(cv1_cr150, CR == countries[n])$ day_from - 
-				min(subset(cv1_cr150, CR == countries[n])$ day_from)		
+		cv1_cr150$day_from[cv1_cr150$Country == countries[n]]  = 
+			subset(cv1_cr150, Country == countries[n])$ day_from - 
+				min(subset(cv1_cr150, Country == countries[n])$ day_from)		
 	}
 
 	#plot with ggplot
 	cv1_cr150 %>%
 		ggplot(aes( x=day_from, y = N, color= Country) ) +
 		geom_line()+
-		geom_point()
+		geom_point()+
+		xlab("Days since case number 150")+
+	  	ylab("Reported cases")
+
+	#all of the countries in the list: 
+	all_countries = unique(cv1_ts$Country)
 
 }
 
@@ -61,11 +66,25 @@ infection_rates = function (countries) {
 
 shinyServer( function(input, output) {
 	
+	#Basic plot of the infection rates
 	output$infection_rates = renderPlot({
-		nfection_rates(input$countries)
+		infection_rates(input$countries)
 		})
 
-	url1 = a("R code", href="https://github.com/jusinowicz/coexistence_shiny_apps/tree/master/lottery")
+	#Download the possible countries to plot: 
+	datasetInput = reactive( infection_rates (countries))
+
+	output$downloadData =	 downloadHandler(
+    	filename= "country_list.csv",
+    	
+    	content = function(file) {
+      	write.csv(datasetInput(), file, row.names = FALSE)
+		}
+	)
+
+
+
+	url1 = a("R code", href="https://github.com/jusinowicz/misc_populations/tree/master/covid_shiny")
 	url2 = a("me", href="http://jacobusinowicz.com/")
 
     output$tag1 <- renderUI({
