@@ -102,13 +102,18 @@ shinyServer( function(input, output,session) {
 	)
 
 	#Just tag things with my own info
+	url3 = a("CSSE at Johns Hopkins University", href = "https://systems.jhu.edu/" )
 	url1 = a("R code", href="https://github.com/jusinowicz/misc_populations/tree/master/covid_shiny")
 	url2 = a("me", href="http://jacobusinowicz.com/")
 
+
     output$tag1 <- renderUI({
+      tagList("Date come from", url3)
+	})
+    output$tag2 <- renderUI({
       tagList("Go to Jacob Usinowicz's github page for:", url1)
 	})
-	output$tag2 <- renderUI({
+	output$tag3 <- renderUI({
       tagList("More about", url2)
 	})
 
