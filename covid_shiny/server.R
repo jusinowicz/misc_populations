@@ -10,10 +10,10 @@ library(lubridate)
 #==============================================================================
 # Plot the infection rates. 
 #==============================================================================
-infection_rates = function (countries) {
+infection_rates = function (countries,get_countries=F) {
 
 	#variables from the UI: 
-	countries = c("Italy", "Canada", "China", "US","Switzerland")
+	#countries = c("Italy", "Canada", "China", "US","Switzerland")
 	
 	#Download the latest data set
 	cv1=read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Confirmed.csv")
@@ -46,16 +46,20 @@ infection_rates = function (countries) {
 				min(subset(cv1_cr150, Country == countries[n])$ day_from)		
 	}
 
-	#plot with ggplot
-	cv1_cr150 %>%
-		ggplot(aes( x=day_from, y = N, color= Country) ) +
+
+	#all of the countries in the list: 
+	if(get_countries == T ) { 
+		return(	all_countries = unique(cv1_ts$Country) )
+	}
+
+	#cv1_cr150
+
+	ggplot(cv1_cr150, aes( x=day_from, y = N, color= Country) ) +
 		geom_line()+
 		geom_point()+
 		xlab("Days since case number 150")+
 	  	ylab("Reported cases")
 
-	#all of the countries in the list: 
-	all_countries = unique(cv1_ts$Country)
 
 }
 
@@ -64,15 +68,30 @@ infection_rates = function (countries) {
 #==============================================================================
 # Tell the server how to run this: 
 
-shinyServer( function(input, output) {
+shinyServer( function(input, output,session) {
 	
-	#Basic plot of the infection rates
-	output$infection_rates = renderPlot({
-		infection_rates(input$countries)
-		})
+	#Initialize countries:
+	countries = c("Italy", "Canada", "China", "US","Switzerland")
 
-	#Download the possible countries to plot: 
-	datasetInput = reactive( infection_rates (countries))
+	#Get the full country list: 
+	country_list =  infection_rates (countries,get_countries=T)
+	#Update the full list with this command. This makes plotting interactive, 
+	#because it will pull the names of countries from the actual data set.
+	updateSelectizeInput(session, 'countries',
+              choices = country_list,
+              selected = c("Italy", "Canada", "China", "US","Switzerland"),
+              server = TRUE
+  	)
+
+	#The main plot. This takes the updated user-input country choices and 
+	#passes them to the main function above. 
+	output$mainplot = renderPlot({
+		countries = input$countries
+		 infection_rates(input$countries,get_countries=F)
+  	})
+
+	#For a complete list of all of the countries in the data set: 
+	datasetInput = reactive( infection_rates (input$countries,get_countries=T))
 
 	output$downloadData =	 downloadHandler(
     	filename= "country_list.csv",
@@ -82,8 +101,7 @@ shinyServer( function(input, output) {
 		}
 	)
 
-
-
+	#Just tag things with my own info
 	url1 = a("R code", href="https://github.com/jusinowicz/misc_populations/tree/master/covid_shiny")
 	url2 = a("me", href="http://jacobusinowicz.com/")
 
@@ -93,4 +111,5 @@ shinyServer( function(input, output) {
 	output$tag2 <- renderUI({
       tagList("More about", url2)
 	})
+
 })

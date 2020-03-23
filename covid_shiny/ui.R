@@ -5,6 +5,9 @@
 library(shiny)
 library(shinyIncubator)
 library(rhandsontable)
+#Load libraries
+library(tidyverse)
+library(lubridate)
 #==============================================================================
 
 
@@ -17,24 +20,18 @@ shinyUI(fluidPage(
   sidebarLayout(
     sidebarPanel(
 
-   	selectizeInput(
-        "countries"
-        , "Enter countries to plot (Default: China, US, Italy, Switzerland, Canada).
-        	Include a space between entries"
-        , choices = NULL
-        , multiple = TRUE
-        , options = list(create = TRUE)
-      )
+   	selectizeInput("countries", "Countries", choices=NULL, multiple =T, 
+   		selected = c("Italy", "Canada", "China", "US","Switzerland"),
+   		options = list( placeholder = 'Type a name, e.g. US')),
 
       # Button
-      downloadButton("downloadData", "Download"),
+      downloadButton("downloadData", "Countries in data set")
      
     ),
     
-    # Show a plot of the generated distribution
+    # Plot the infection rates
     mainPanel(
-      plotOutput("infection_ratest")
-      )
+      plotOutput("mainplot")
     )
   ),
 
