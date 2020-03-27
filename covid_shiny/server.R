@@ -16,7 +16,7 @@ infection_rates = function (countries,get_countries=F) {
 	#countries = c("Italy", "Canada", "China", "US","Switzerland")
 	
 	#Download the latest data set
-	cv1=read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Confirmed.csv")
+	cv1=read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv")
 	colnames(cv1)[1] = "State"  #Rename the headings
 	colnames(cv1)[2] = "Country"
 
@@ -36,7 +36,7 @@ infection_rates = function (countries,get_countries=F) {
 	  	summarise( N = sum(N))
 
 	#Find the day at which reported cases reaches 150
-	cv1_cr150 = subset(cv1_cr, N > 150 & N< 60000) %>%
+	cv1_cr150 = subset(cv1_cr, N > 150 ) %>%
 		mutate(day_from = as.integer(day))
 
 	#Rescale the time series so that they all start on day_150	
