@@ -5,6 +5,6 @@ account: ecotheory
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 1984076
-bundleId: 2915067
+bundleId: 2915117
 url: https://ecotheory.shinyapps.io/covid_shiny/
-when: 1584999651.35047
+when: 1585000505.53326

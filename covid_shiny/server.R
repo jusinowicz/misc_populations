@@ -14,7 +14,6 @@ infection_rates = function (countries,get_countries=F) {
 
 	#variables from the UI: 
 	#countries = c("Italy", "Canada", "China", "US","Switzerland")
-	
 	#Download the latest data set
 	cv1=read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv")
 	colnames(cv1)[1] = "State"  #Rename the headings
