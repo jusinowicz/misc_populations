@@ -25,17 +25,17 @@ infection_rates = function (countries,get_countries=F) {
 		gather(key = day, value = N, colnames(cv1)[5:d2]) 
 	cv1_ts$day = mdy(cv1_ts$day)
 
-	#Pull out the countries specified in countries
-	cv1_use = cv1_ts %>% 
-		filter(Country %in%  countries)
-
 	#Sum across states in a country for totals
-	cv1_cr = cv1_use %>%
+	cv1_C = cv1_ts %>%
 		group_by(Country,day )%>% 
 	  	summarise( N = sum(N))
 
+	#Pull out the countries specified in countries
+	cv1_use = cv1_C %>% 
+		filter(Country %in%  countries)
+
 	#Find the day at which reported cases reaches 150
-	cv1_cr150 = subset(cv1_cr, N > 150 ) %>%
+	cv1_cr150 = subset(cv1_use, N > 150 ) %>%
 		mutate(day_from = as.integer(day))
 
 	#Rescale the time series so that they all start on day_150	
