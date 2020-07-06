@@ -19,6 +19,10 @@ infection_rates = function (countries,get_countries=F) {
 	colnames(cv1)[1] = "State"  #Rename the headings
 	colnames(cv1)[2] = "Country"
 
+	cd1=read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv")
+
+	cr1=
+
 	d2 = dim(cv1)[2] #Get the length of the max time series
 	#Reshape the data set into a time series:
 	cv1_ts = cv1 %>%
