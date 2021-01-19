@@ -31,11 +31,12 @@ lv_path= function(times,sp,parms){
 }  
 
 #=============================================================================
-# Set values of the population parameters
+# Set values of parameters
 #=============================================================================
+#How many species to start? 
+nspp = 20
 
 spp_prms = NULL
-nspp = 20
 spp_prms$ri = matrix(rpois(nspp,10), nspp, 1) #intrinsic growth
 spp_prms$Hp = matrix(rpois(nspp,100), nspp, 1) #intrinsic growth
 
@@ -59,6 +60,7 @@ minit = c( matrix(0.001,nspp,1) )
 
 lv_out = dede(y=minit, times=times, func=lv_path, parms=parms, atol = 1e-9)
 lv_out = as.data.frame(lv_out)
+
 #=============================================================================
 # Plot
 #=============================================================================
@@ -84,7 +86,9 @@ theme(axis.text.x=element_blank(), axis.title.x=element_blank(), legend.position
 p3=ggplot()+ geom_line( data = lv_long, aes ( x = time, y = biomass)  )+
 ylab("Biomass")
 
-grid.arrange(p1,p2,p3, nrow = 3 )
+p4 = grid.arrange(p1,p2,p3, nrow = 3 )
+
+ggsave("./feedbacks1.pdf", p4, width = 8, height = 10)
 
 
 
