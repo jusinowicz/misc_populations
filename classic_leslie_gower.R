@@ -21,7 +21,7 @@ source("./eq_tests.R")
 ngens=16000 #Number of generations 
 mFr=matrix(c(5,5))   #Mean reproduction rates
 sig_Fr= matrix(c(1, -1, -1, 1),2,2) #Interspecific covariance of reproduction
-alphas=matrix( c(0.5,0.5),2,1) #Alpha coefficients, competitive interactions
+alphas=matrix( c(1,0.5,0.5,1),2,2) #Alpha coefficients, competitive interactions
 sr=0.9 #Survival
 #Invasion times (divide into quarters is the easiest)
 invasions =c(1, floor(ngens/4), floor(ngens/2), floor(ngens*3/4) )
@@ -31,36 +31,28 @@ invasions =c(1, floor(ngens/4), floor(ngens/2), floor(ngens*3/4) )
 #########
 Fr=abs(mvrnorm(ngens,mFr,sig_Fr)) #Take the abs value of correlated normal
 #Standardize values between 0 and 1 based on maximum.
-Fr=Fr/(matrix(apply(Fr,2,max),ngens,2,byrow=T)) 
+# Fr=Fr/(matrix(apply(Fr,2,max),ngens,2,byrow=T)) 
 #Population matrixes
 nrns1=matrix(0,ngens,1)
 nrns2=matrix(0,ngens,1)
-#Exponential form of the model: 
-nrns1E=matrix(0,ngens,1)
-nrns2E=matrix(0,ngens,1)
 
 nrns2[1]=0.1 #Seed species 2 and allow it to establish as resident
-nrns2E[1]=0.1
 
 for (n in 1:(ngens-1)) {
 
 	#Invasion: Seed or set to near-zero at the appropriate time steps:
-	if (n==invasions[2]) { nrns1[n]=0.0001; nrns1E[n]=0.0001  }
+	if (n==invasions[2]) { nrns1[n]=0.0001 }
+
 	#Switch the roles of resident and invader between species 1 and 2
-	if (n==invasions[3]) { nrns1[n]=0.1; nrns1E[n]=0.1
-							nrns2[n]=0; nrns2E[n]=0   }
+	if (n==invasions[3]) { nrns1[n]=0.1
+							nrns2[n]=0}
 	#Second invasion
-	if (n==invasions[4]) { nrns2[n]=0.0001;nrns2E[n]=0.0001 }
+	if (n==invasions[4]) { nrns2[n]=0.0001 }
 
 
-	#Spatially implicit annual plant model
-	nrns1[n+1] = sr*(1-Fr[n,1])*nrns1[n]+Fr[n,1]*mFr[1]*nrns1[n]/(1+alphas[1]*(nrns1[n]*Fr[n,1]+Fr[n,2]*nrns2[n]))
-	nrns2[n+1] = sr*(1-Fr[n,2])*nrns2[n]+Fr[n,2]*mFr[2]*nrns2[n]/(1+alphas[2]*(nrns1[n]*Fr[n,1]+Fr[n,2]*nrns2[n]))
-
-	#Exponential form of the model
-	nrns1E[n+1] = sr*(1-exp(log(Fr[n,1])))*nrns1E[n]+nrns1E[n]*mFr[1]*exp( log(Fr[n,1])- log(1+alphas[1]*(nrns1E[n]*Fr[n,1]+Fr[n,2]*nrns2E[n])))
-	nrns2E[n+1] = sr*(1-exp(log(Fr[n,2])))*nrns2E[n]+nrns2E[n]*mFr[2]*exp( log(Fr[n,2])-log(1+alphas[2]*(nrns1E[n]*Fr[n,1]+Fr[n,2]*nrns2E[n])))
-
+	#LG model
+	nrns1[n+1] = sr*nrns1[n]+Fr[n,1]*nrns1[n]/(1+alphas[1,1]*nrns1[n]+alphas[1,2]*nrns2[n])
+	nrns2[n+1] = sr*nrns2[n]+Fr[n,2]*nrns2[n]/(1+alphas[2,1]*nrns1[n]+alphas[2,2]*nrns2[n])
 
 }
 
@@ -72,6 +64,7 @@ lines(nrns1,col="red")
 #=========================================================================
 
 #Fit a linear model to get invasion growth rates
+#These starting and ending times are just being tuned by eye: 
 a1=4000
 a2=4100
 m1=log(nrns1[a1:a2])
@@ -81,8 +74,48 @@ m1.lm=lm(m1~xx)
 #or take the log(gr1[inv+1]/gr1[inv]) to get invasion growth rates
 ni = a1
 nj=a1+1
-m1.d = log( (sr*(1-Fr[nj,1])*nrns1[nj]+Fr[nj,1]*mFr[1]*nrns1[nj]/(1+alphas[1]*(nrns1[nj]*Fr[nj,1]+Fr[nj,2]*nrns2[nj])))/
-(sr*(1-Fr[ni,1])*nrns1[ni]+Fr[ni,1]*mFr[1]*nrns1[ni]/(1+alphas[1]*(nrns1[ni]*Fr[ni,1]+Fr[ni,2]*nrns2[ni]))) )
+m1.d = log( (sr*nrns1[nj]+Fr[nj,1]*nrns1[nj]/(1+alphas[1,1]*nrns1[nj]+alphas[1,2]*nrns2[nj]))/
+(sr*nrns1[ni]+Fr[ni,1]*nrns1[ni]/(1+alphas[1,1]*nrns1[ni]+alphas[1,2]*nrns2[ni])) )
+
+#=========================================================================
+# Try recovering original parameters by fitting with NLS
+#=========================================================================
+#Try all parameters at once, all data at once: 
+dat1 = nrns1[1:(ngens-1)]
+dat2 = nrns1[2:ngens] #One time step forward
+#Fit the model using the growth rate del1 = (change in time)
+delta_dat = data.frame( del1 = dat2/dat1, dat1=dat1, datb =nrns2[1:(ngens-1)]  ) 
+delta_dat = delta_dat[is.finite(delta_dat[,1]), ] #Only keep finite rows! 
+start1 = c(r=1.1, a1=0.5, a2=0.5) #The starting values of parameters that NLS will fit
+lg_fit = nls(del1 ~ sr+r/(1+a1*dat1+a2*datb), data = delta_dat, 
+	start1)
+summary(lg_fit)
+
+#Try only interspecific competition, in the invasion regions: 
+#These starting and ending times are just being tuned by eye: 
+a1=4000
+a2=4100
+dat1 = nrns1[a1:a2]
+dat2 = nrns1[(a1+1):(a2+1)] #One time step forward
+#Fit the model using the growth rate del1 = (change in time)
+delta_dat = data.frame( del1 = dat2/dat1, dat1=dat1, datb =nrns2[a1:a2]  ) 
+delta_dat = delta_dat[is.finite(delta_dat[,1]), ] #Only keep finite rows! 
+start1 = c(r=1.1, a2=0.5) #The starting values of parameters that NLS will fit
+lg_fit2 = nls(del1 ~ sr+r/(1+a2*datb), data = delta_dat, 
+	start1)
+summary(lg_fit2) #This does poorly, perhaps because of too little data? 
+
+#Try only interspecific competition, in the invasion region, and assume R is known: 
+dat1 = nrns1[a1:a2]
+dat2 = nrns1[(a1+1):(a2+1)] #One time step forward
+#Fit the model using the growth rate del1 = (change in time)
+delta_dat = data.frame( del1 = dat2/dat1, dat1=dat1, datb =nrns2[a1:a2]  ) 
+delta_dat = delta_dat[is.finite(delta_dat[,1]), ] #Only keep finite rows! 
+start1 = c(a2=0.5) #The starting values of parameters that NLS will fit
+lg_fit3 = nls(del1 ~ sr+mean(Fr[,1])/(1+a2*datb), data = delta_dat, 
+	start1)
+summary(lg_fit3) #This does well 
+
 
 #=========================================================================
 # Experimental section: How well do stats for equilibrium work?  
