@@ -11,6 +11,7 @@
 #=========================================================================
 library(MASS)
 library(nlstools) #For prediction intervals
+library(tidyverse)
 source("./eq_tests.R")
 
 #=========================================================================
@@ -135,29 +136,6 @@ summary(lg_fit3) #This does well
 ### Get prediction intervals for NLS fits. 
 lg_fit_boot3 = nlsBoot(lg_fit3)
 lg_pred3 = nlsBootPredict (lg_fit_boot3, newdata=delta_dat, interval = "prediction")
-
-
-#=========================================================================
-# Get prediction intervals for NLS fits. 
-#=========================================================================
-lg_pred1 = predict(lg_fit, delta_dat, se.fit = TRUE,
-        interval = c("prediction"),
-        level = 0.95)
-
-nsims=1000
-s1 = summary(lg_fit,correlation=T) #Get parameters and correlation matrix
-sim1 = mvrnorm(1000,  s1$coefficients[,1], s1$correlation)
-
-##This produces the mean model: 
-mean.model= rowMeans(Xp%*%t(sim1)+cp_y[1])
-
-##To keep each posterior simulation and get CIs: 
-model_post= Xp%*%t(br1)+cp_y[1]
-model_post = exp(model_post)/(1+exp(model_post))
-#q1=quantile(mean.model,c(.025,.975))
-flower_ci_tmp = t(apply(model_post, 1, quantile, c(0.05,0.95)))
-flower_se_tmp = apply(model_post, 1, sd ) 
-
 
 #=========================================================================
 # Experimental section: How well do stats for equilibrium work?  
