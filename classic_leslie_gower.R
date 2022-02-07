@@ -10,6 +10,7 @@
 ## Load these libraries
 #=========================================================================
 library(MASS)
+library(nlstools) #For prediction intervals
 source("./eq_tests.R")
 
 #=========================================================================
@@ -87,9 +88,25 @@ dat2 = nrns1[2:ngens] #One time step forward
 delta_dat = data.frame( del1 = dat2/dat1, dat1=dat1, datb =nrns2[1:(ngens-1)]  ) 
 delta_dat = delta_dat[is.finite(delta_dat[,1]), ] #Only keep finite rows! 
 start1 = c(r=1.1, a1=0.5, a2=0.5) #The starting values of parameters that NLS will fit
-lg_fit = nls(del1 ~ sr+r/(1+a1*dat1+a2*datb), data = delta_dat, 
-	start1)
+lg_fit = nls(del1 ~ 0.9+r/(1+a1*dat1+a2*datb), data = data.frame(delta_dat), 
+	start=start1)
 summary(lg_fit)
+
+### Get prediction intervals for NLS fit. 
+lg_fit_boot = nlsBoot(lg_fit) #Use nlstools to repeatadly sample (bootstrap)
+#Use the nlsBoot object to make intervals
+lg_pred1 = nlsBootPredict (lg_fit_boot, newdata=delta_dat[,2:3], interval = "prediction")
+lg_dat =data.frame(
+	t = 1:length (delta_dat$del1), del1= delta_dat$del1, pred = lg_pred1[,1], 
+	lower = lg_pred1[,2], upper = lg_pred1[,3]) #Combine the data frame with predictions
+
+#An ugly plot just to look at the results
+ggplot( )+geom_line(data = lg_dat, aes(x =t, y =del1,col = "Simulation" )) +
+			geom_line(data = lg_dat, aes(x =t, y =pred,col="Prediction" )) +
+			geom_line(data = lg_dat, aes(x =t, y =lower,col ="PI" )) +
+			geom_line(data = lg_dat, aes(x =t, y =upper,col="PI" )) +
+			ylab("Population growth rate")+ xlab("Time") + 
+			scale_y_continuous(limits = c(0.5, 1.5)) 
 
 #Try only interspecific competition, in the invasion regions: 
 #These starting and ending times are just being tuned by eye: 
@@ -101,7 +118,7 @@ dat2 = nrns1[(a1+1):(a2+1)] #One time step forward
 delta_dat = data.frame( del1 = dat2/dat1, dat1=dat1, datb =nrns2[a1:a2]  ) 
 delta_dat = delta_dat[is.finite(delta_dat[,1]), ] #Only keep finite rows! 
 start1 = c(r=1.1, a2=0.5) #The starting values of parameters that NLS will fit
-lg_fit2 = nls(del1 ~ sr+r/(1+a2*datb), data = delta_dat, 
+lg_fit2 = nls(del1 ~ 0.9+r/(1+a2*datb), data = delta_dat, 
 	start1)
 summary(lg_fit2) #This does poorly, perhaps because of too little data? 
 
@@ -112,9 +129,34 @@ dat2 = nrns1[(a1+1):(a2+1)] #One time step forward
 delta_dat = data.frame( del1 = dat2/dat1, dat1=dat1, datb =nrns2[a1:a2]  ) 
 delta_dat = delta_dat[is.finite(delta_dat[,1]), ] #Only keep finite rows! 
 start1 = c(a2=0.5) #The starting values of parameters that NLS will fit
-lg_fit3 = nls(del1 ~ sr+mean(Fr[,1])/(1+a2*datb), data = delta_dat, 
+lg_fit3 = nls(del1 ~ 0.9+mean(Fr[,1])/(1+a2*datb), data = delta_dat, 
 	start1)
 summary(lg_fit3) #This does well 
+### Get prediction intervals for NLS fits. 
+lg_fit_boot3 = nlsBoot(lg_fit3)
+lg_pred3 = nlsBootPredict (lg_fit_boot3, newdata=delta_dat, interval = "prediction")
+
+
+#=========================================================================
+# Get prediction intervals for NLS fits. 
+#=========================================================================
+lg_pred1 = predict(lg_fit, delta_dat, se.fit = TRUE,
+        interval = c("prediction"),
+        level = 0.95)
+
+nsims=1000
+s1 = summary(lg_fit,correlation=T) #Get parameters and correlation matrix
+sim1 = mvrnorm(1000,  s1$coefficients[,1], s1$correlation)
+
+##This produces the mean model: 
+mean.model= rowMeans(Xp%*%t(sim1)+cp_y[1])
+
+##To keep each posterior simulation and get CIs: 
+model_post= Xp%*%t(br1)+cp_y[1]
+model_post = exp(model_post)/(1+exp(model_post))
+#q1=quantile(mean.model,c(.025,.975))
+flower_ci_tmp = t(apply(model_post, 1, quantile, c(0.05,0.95)))
+flower_se_tmp = apply(model_post, 1, sd ) 
 
 
 #=========================================================================
