@@ -12,6 +12,8 @@
 library(MASS)
 library(nlstools) #For prediction intervals
 library(tidyverse)
+library(gridExtra)
+require(grid)
 source("./eq_tests.R")
 
 #=========================================================================
@@ -22,8 +24,11 @@ source("./eq_tests.R")
 #########
 ngens=16000 #Number of generations 
 mFr=matrix(c(5,5))   #Mean reproduction rates
+mFr2=matrix(c(10,10))   #Mean reproduction rates
 sig_Fr= matrix(c(1, -1, -1, 1),2,2) #Interspecific covariance of reproduction
-alphas=matrix( c(1,0.5,0.5,1),2,2) #Alpha coefficients, competitive interactions
+sig_Fr2= matrix(c(1, 0, 0, 1),2,2) #Interspecific covariance of reproduction
+
+alphas=matrix( c(1,0.8,0.8,1),2,2) #Alpha coefficients, competitive interactions
 sr=0.9 #Survival
 #Invasion times (divide into quarters is the easiest)
 invasions =c(1, floor(ngens/4), floor(ngens/2), floor(ngens*3/4) )
@@ -32,35 +37,136 @@ invasions =c(1, floor(ngens/4), floor(ngens/2), floor(ngens*3/4) )
 #Internal
 #########
 Fr=abs(mvrnorm(ngens,mFr,sig_Fr)) #Take the abs value of correlated normal
+Fr2=abs(mvrnorm(ngens,mFr2,sig_Fr2)) #Take the abs value of correlated normal
+
 #Standardize values between 0 and 1 based on maximum.
 # Fr=Fr/(matrix(apply(Fr,2,max),ngens,2,byrow=T)) 
 #Population matrixes
 nrns1=matrix(0,ngens,1)
 nrns2=matrix(0,ngens,1)
+nrns3=matrix(0,ngens,1)
+nrns4=matrix(0,ngens,1)
+lggr1=matrix(0,ngens,1)
+lvgr1=matrix(0,ngens,1)
 
 nrns2[1]=0.1 #Seed species 2 and allow it to establish as resident
+nrns4[1]=0.1 #Seed species 2 and allow it to establish as resident
+
 
 for (n in 1:(ngens-1)) {
 
 	#Invasion: Seed or set to near-zero at the appropriate time steps:
-	if (n==invasions[2]) { nrns1[n]=0.0001 }
+	if (n==invasions[2]) { nrns1[n]=0.0001;nrns3[n]=0.0001 }
 
 	#Switch the roles of resident and invader between species 1 and 2
-	if (n==invasions[3]) { nrns1[n]=0.1
-							nrns2[n]=0}
+	if (n==invasions[3]) { nrns1[n]=0.1;nrns3[n]=0.1 
+							nrns2[n]=0;nrns4[n]=0}
 	#Second invasion
-	if (n==invasions[4]) { nrns2[n]=0.0001 }
+	if (n==invasions[4]) { nrns2[n]=0.0001;nrns4[n]=0.0001 }
 
 
 	#LG model
 	nrns1[n+1] = sr*nrns1[n]+Fr[n,1]*nrns1[n]/(1+alphas[1,1]*nrns1[n]+alphas[1,2]*nrns2[n])
 	nrns2[n+1] = sr*nrns2[n]+Fr[n,2]*nrns2[n]/(1+alphas[2,1]*nrns1[n]+alphas[2,2]*nrns2[n])
+	lggr1[n+1] = sr+Fr[n,1]/(1+alphas[1,1]*nrns1[n]+alphas[1,2]*nrns2[n])
+	#LV model
+	# nrns3[n+1] = nrns3[n]+0.5*nrns3[n]*(1-alphas[1,1]/Fr2[n,1]*nrns3[n]-alphas[1,2]/Fr2[n,1]*nrns4[n])
+	# nrns4[n+1] = nrns4[n]+0.5*nrns4[n]*(1-alphas[2,1]/Fr2[n,2]*nrns3[n]-alphas[2,2]/Fr2[n,2]*nrns4[n])
 
+	nrns3[n+1] = nrns3[n]+0.5/(Fr2[n,1])*nrns3[n]*(Fr2[n,1]-alphas[1,1]*nrns3[n]-alphas[1,2]*nrns4[n])
+	nrns4[n+1] = nrns4[n]+0.5/(Fr2[n,2])*nrns4[n]*(Fr2[n,2]-alphas[2,1]*nrns3[n]-alphas[2,2]*nrns4[n])
+	lvgr1[n+1] = 1+0.5/(Fr2[n,1])*(Fr2[n,1]-alphas[1,1]*nrns3[n]-alphas[1,2]*nrns4[n])
+
+	# nrns3[n+1] = nrns3[n]+1.5*nrns3[n]*(1-alphas[1,1]*nrns3[n]-alphas[1,2]*nrns4[n])+nrns3[n]*Fr2[n,1]
+	# nrns4[n+1] = nrns4[n]+1.5*nrns4[n]*(1-alphas[2,1]*nrns3[n]-alphas[2,2]*nrns4[n])+nrns4[n]*Fr2[n,2]
+	# lvgr1[n+1] = 1+1.5*(1-alphas[1,1]*nrns3[n]-alphas[1,2]*nrns4[n]) + Fr2[n,1]
 }
 
-plot(nrns2,t="l")
-lines(nrns1,col="red") 
+tu1 = 1
+tu2 = ngens
+# tu1 = 4000
+# tu2 = 4800
+plot(nrns2[tu1:tu2],t="l",ylim=c(0,60))
+lines(nrns1[tu1:tu2],col="red") 
+plot(nrns3[tu1:tu2],t="l",ylim=c(0,12))
+lines(nrns4[tu1:tu2],col="red") 
 
+tu1 = 4000
+tu2 = 4800
+d1_tmp = data.frame(lg1 =nrns1[tu1:tu2], lg2 =nrns2[tu1:tu2], time = 1:length(nrns2[tu1:tu2]) )
+d1 = gather(d1_tmp, "lg1","lg2", key=species, value=Population  )
+d2_tmp = data.frame(lv1 =nrns3[tu1:tu2], lv2 =nrns4[tu1:tu2], time = 1:length(nrns3[tu1:tu2]) )
+d2 = gather(d2_tmp, "lv1","lv2", key=species, value=Population  )
+
+c_use = c("#440154FF","#35B779FF" )
+p1 = ggplot() + geom_line(data=d1, aes(x=time, y = Population,color=species))+
+	scale_color_manual(values=c_use) +
+	theme_bw() + theme(
+	text = element_text(size=20),
+	panel.border = element_blank(), panel.grid.major = element_blank(),
+	panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
+	legend.position = "none")
+p2 = ggplot() + geom_line(data=d2, aes(x=time, y =Population,color=species))+
+	scale_color_manual(values=c_use) +
+	theme_bw() + theme(
+	text = element_text(size=20),
+	panel.border = element_blank(), panel.grid.major = element_blank(),
+	panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
+	legend.position = "none")
+
+
+g=grid.arrange(p2, p1,nrow=1)
+
+ggsave(file="populations.jpg", g)
+
+
+#Growth rate functions: 
+tu1 = 8000
+tu2 = 9000
+grlg1 = nrns1[2:ngens]/nrns1[1:(ngens-1)] 
+grlv1 = nrns3[2:ngens]/nrns3[1:(ngens-1)] 
+x1 = 0:200
+x1a = sort(nrns1[tu1:tu2])
+x1b = sort(nrns3[tu1:tu2])
+grm_lg = sr+mean(Fr[,1])/(1+alphas[1,1]*x1a+alphas[1,2]*mean(nrns2[tu1:tu2]) )
+grm_lv = 1+mean(0.5/(Fr2[,1]) )*(mean(Fr2[,1])-alphas[1,1]*x1b-alphas[1,2]*mean(nrns4[tu1:tu2]) )
+
+gr1a = data.frame(gr1= grlg1[tu1:tu2], Population = nrns1[(tu1-1):(tu2-1)]  )
+#gr1a = data.frame(gr1= grlg1, Population = x2a  )
+gr1b = data.frame(gr1m= grm_lg, Population = x1a)
+gr2a = data.frame(gr1 = grlv1[tu1:tu2], Population = nrns3[(tu1-1):(tu2-1)] )
+#gr2a = data.frame(gr1 = grlv1, Population = x2b )
+gr2b =  data.frame(gr1m= grm_lv, Population =x1b )
+
+grm_lgM = sr+mean(Fr[,1])/(1+alphas[1,1]*mean(x1a)+alphas[1,2]*mean(nrns2[tu1:tu2]) )
+grm_lvM = 1+mean(0.5/(Fr2[,1]))*(mean(Fr2[,1])-alphas[1,1]*mean(x1b)-alphas[1,2]*mean(nrns4[tu1:tu2]) )
+grm_lgMM = mean(grlg1[tu1:tu2])
+grm_lvMM = mean(grlv1[tu1:tu2])
+
+p1 = ggplot() + geom_point(data=gr1a, aes(x=Population, y = gr1))+
+	geom_line(data=gr1b, aes(x=Population, y = gr1m))+
+	scale_color_manual(values=c_use[1])  +
+	xlim(c(0,60))+
+	theme_bw() + theme(
+	text = element_text(size=20),
+	panel.border = element_blank(), panel.grid.major = element_blank(),
+	panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
+	legend.position = "none")
+p2 = ggplot() + geom_point(data=gr2a, aes(x=Population, y = gr1))+
+	geom_line(data=gr2b, aes(x=Population, y = gr1m))+
+	xlim(c(0,10))+
+	ylim(c(0.5,1.5))+
+	scale_color_manual(values=c_use[1])  +
+	theme_bw() + theme(
+	text = element_text(size=20),
+	panel.border = element_blank(), panel.grid.major = element_blank(),
+	panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
+	legend.position = "none")
+
+
+g=grid.arrange(p1, p2,nrow=1)
+
+ggsave(file="populations.jpg", g)
 #=========================================================================
 # Calculate invasion growth rates 
 #=========================================================================

@@ -22,6 +22,7 @@ ngens=16000 #Number of generations
 mFr=matrix(c(5,5))   #Mean reproduction rates
 sig_Fr= matrix(c(1, -1, -1, 1),2,2) #Interspecific covariance of reproduction
 alphas=matrix( c(0.5,0.5),2,1) #Alpha coefficients, competitive interactions
+
 sr=0.9 #Survival
 #Invasion times (divide into quarters is the easiest)
 invasions =c(1, floor(ngens/4), floor(ngens/2), floor(ngens*3/4) )
@@ -54,12 +55,16 @@ for (n in 1:(ngens-1)) {
 
 
 	#Spatially implicit annual plant model
-	nrns1[n+1] = sr*(1-Fr[n,1])*nrns1[n]+Fr[n,1]*mFr[1]*nrns1[n]/(1+alphas[1]*(nrns1[n]*Fr[n,1]+Fr[n,2]*nrns2[n]))
-	nrns2[n+1] = sr*(1-Fr[n,2])*nrns2[n]+Fr[n,2]*mFr[2]*nrns2[n]/(1+alphas[2]*(nrns1[n]*Fr[n,1]+Fr[n,2]*nrns2[n]))
+	# nrns1[n+1] = sr*(1-Fr[n,1])*nrns1[n]+Fr[n,1]*mFr[1]*nrns1[n]/(1+alphas[1]*(nrns1[n]*Fr[n,1]+Fr[n,2]*nrns2[n]))
+	# nrns2[n+1] = sr*(1-Fr[n,2])*nrns2[n]+Fr[n,2]*mFr[2]*nrns2[n]/(1+alphas[2]*(nrns1[n]*Fr[n,1]+Fr[n,2]*nrns2[n]))
+
+	#LG model
+	nrns1[n+1] = sr*nrns1[n]+Fr[n,1]*nrns1[n]/(1+alphas[1,1]*nrns1[n]+alphas[1,2]*nrns2[n])
+	nrns2[n+1] = sr*nrns2[n]+Fr[n,2]*nrns2[n]/(1+alphas[2,1]*nrns1[n]+alphas[2,2]*nrns2[n])
 
 	#Exponential form of the model
-	nrns1E[n+1] = sr*(1-exp(log(Fr[n,1])))*nrns1E[n]+nrns1E[n]*mFr[1]*exp( log(Fr[n,1])- log(1+alphas[1]*(nrns1E[n]*Fr[n,1]+Fr[n,2]*nrns2E[n])))
-	nrns2E[n+1] = sr*(1-exp(log(Fr[n,2])))*nrns2E[n]+nrns2E[n]*mFr[2]*exp( log(Fr[n,2])-log(1+alphas[2]*(nrns1E[n]*Fr[n,1]+Fr[n,2]*nrns2E[n])))
+	# nrns1E[n+1] = sr*(1-exp(log(Fr[n,1])))*nrns1E[n]+nrns1E[n]*mFr[1]*exp( log(Fr[n,1])- log(1+alphas[1]*(nrns1E[n]*Fr[n,1]+Fr[n,2]*nrns2E[n])))
+	# nrns2E[n+1] = sr*(1-exp(log(Fr[n,2])))*nrns2E[n]+nrns2E[n]*mFr[2]*exp( log(Fr[n,2])-log(1+alphas[2]*(nrns1E[n]*Fr[n,1]+Fr[n,2]*nrns2E[n])))
 
 
 }
